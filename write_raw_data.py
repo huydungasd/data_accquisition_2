@@ -18,8 +18,6 @@ def main():
 	args = parser.parse_args()
 
 	board = Arduino('/dev/ttyACM0')
-	input("Press Enter to continue...")
-	print(time.time())
 	it = util.Iterator(board)
 	it.start()
 	board.analog[0].enable_reporting()
@@ -42,12 +40,14 @@ def main():
 		print('Sys_cal={0} Gyro_cal={1} Accel_cal={2} Mag_cal={3}'.format(sys, gyro, accel, mag))
 		if sys == 3 & gyro == 3 & accel == 3 & mag == 3:
 			os.system('clear')
-			print('Writing .csv file...')
+			print('Calibration completed !')
 			calibration = True
 
 	filename = args.f_output
 	data_num = args.data_num
 	f, writer = init_data_file(filename, data_num)
+	input("Press Enter and start the tango phone at the same time to continue...")
+	writer.writerow([time.time()])
 	while True:
 		try:
 			# Read all data at once and write to scv file
