@@ -19,6 +19,7 @@ def main():
 
 	board = Arduino('/dev/ttyACM0')
 	input("Press Enter to continue...")
+	print(time.time())
 	it = util.Iterator(board)
 	it.start()
 	board.analog[0].enable_reporting()
