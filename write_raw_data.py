@@ -7,7 +7,6 @@ import argparse
 import time
 
 from utils.data_acq import *
-from pyfirmata import Arduino, util
 from Adafruit_BNO055 import BNO055
 
 
@@ -16,13 +15,6 @@ def main():
 	parser.add_argument('--data_num', type=int, help='Data folder')
 	parser.add_argument('--f_output', type=int, help='First output name')
 	args = parser.parse_args()
-
-	board = Arduino('/dev/ttyACM0')
-	it = util.Iterator(board)
-	it.start()
-	board.analog[0].enable_reporting()
-	board.analog[1].enable_reporting()
-	board.analog[2].enable_reporting()
 
 	bno = BNO055.BNO055(serial_port='/dev/ttyAMA0')
 	bno.begin()#mode=BNO055_MODE_ACCONLY)
@@ -52,7 +44,7 @@ def main():
 		try:
 			# Read all data at once and write to scv file
 			all_data = read_raw_data(bno, com_all_data, length=32)
-			writer.writerow([time.time(), *all_data, board.analog[0].read(), board.analog[1].read(), board.analog[2].read()])
+			writer.writerow([time.time(), *all_data])
 		except KeyboardInterrupt:
 			while True:
 				os.system('clear')
