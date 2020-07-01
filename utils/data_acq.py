@@ -48,6 +48,7 @@ def read_raw_data(bno, command, length=6):
 def init_data_file(filename, data_num):
 	f = open(f'./raw_data/data{data_num}/{filename}.csv', 'w', newline='')
 	writer = csv.writer(f)
+	writer.writerow(['start time:', time.time()])
 	writer.writerow(['time', 'acc raw', '', '', '', '', '', 'mag raw', '', '',  '', '', '', 'gyr raw', '', '', \
 			'', '', '', 'orientation fusion', '', '', '', '', '',  'quaternion fusion', '', '', '', '', '', \
 			'', '', 'IR on A0', 'IR on A1', 'IR on A2'])

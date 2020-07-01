@@ -38,8 +38,22 @@ def main():
 	filename = args.f_output
 	data_num = args.data_num
 	f, writer = init_data_file(filename, data_num)
-	input("Press Enter and start the tango phone at the same time to continue...")
-	writer.writerow([time.time()])
+	time.sleep(0.5)
+	input("Step 1: Press Enter and start the tango phone at the same time to continue...")
+	
+	print("Step 2: You need to put the tango phone on the IMU and make a rotation around Z axis. You will have 5sec")
+	input("Ready? Press Enter to continue...")
+	s2_time = time.time()
+	print("Writing data...")
+	while time.time() - s2_time < 5:
+		all_data = read_raw_data(bno, com_all_data, length=32)
+		writer.writerow([time.time(), *all_data])
+
+	time.sleep(0.5)
+	print("Step 3: Now you can make your measurement. Make sure the relative positions of your 2 devices doesn't change during the measurement")
+	input("Ready? Press Enter to continue...")
+	
+
 	while True:
 		try:
 			# Read all data at once and write to scv file
