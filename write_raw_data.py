@@ -37,9 +37,10 @@ def main():
 
 	filename = args.f_output
 	data_num = args.data_num
+	
+	input("Step 1: Press Enter and start the tango phone at the same time to continue...")
 	f, writer = init_data_file(filename, data_num)
 	time.sleep(0.5)
-	input("Step 1: Press Enter and start the tango phone at the same time to continue...")
 	
 	print("Step 2: You need to put the tango phone on the IMU and make a rotation around Z axis. You will have 5sec")
 	input("Ready? Press Enter to continue...")
