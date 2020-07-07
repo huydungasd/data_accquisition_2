@@ -38,7 +38,7 @@ def main():
 
 	os.system('clear')
 	input("Step 2: Put the IMU in 6 different stable positions. Press any key to continue...")
-	filename = args.f_output + '_6_fix_positions'
+	filename = str(args.f_output) + '_6_fix_positions'
 	data_num = args.data_num
 	f, writer = init_data_file(filename, data_num)
 	time.sleep(0.5)
