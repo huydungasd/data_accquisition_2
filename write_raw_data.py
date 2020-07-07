@@ -26,6 +26,7 @@ def main():
 	#write_to_register(bno, BNO055_MAG_CONFIG, 0b00000000, 'Mag Config')
 	#write_to_register(bno, BNO055_PAGE_ID_ADDR, 0x00, 'Page ID')
 
+	input("Step 1: Calibrate IMU sensor. Press any key to continue...")
 	calibration = False
 	while not calibration:
 		sys, gyro, accel, mag = bno.get_calibration_status()
@@ -35,14 +36,33 @@ def main():
 			print('Calibration completed !')
 			calibration = True
 
+	os.system('clear')
+	input("Step 2: Put the IMU in 6 different stable positions. Press any key to continue...")
+	filename = args.f_output + '_6_fix_positions'
+	data_num = args.data_num
+	f, writer = init_data_file(filename, data_num)
+	time.sleep(0.5)
+	for i in range(6):
+		input(f"Put your IMU in the position number {i+1} then press any key to continue... You have 4s")
+		time_start = time.time()
+		print("Writing data...")
+		while time.time() - time_start < 4:
+			all_data = read_raw_data(bno, com_all_data, length=32)
+			writer.writerow([time.time(), *all_data])
+	f.close()
+	
+	os.system('clear')
+	input("Step 3: Calibrate your Tango phone. Press any key to continue...")
+
 	filename = args.f_output
 	data_num = args.data_num
-	
-	input("Step 1: Press Enter and start the tango phone at the same time to continue...")
+	os.system('clear')
+	input("Step 4: Press Enter and start the tango phone at the same time to continue...")
 	f, writer = init_data_file(filename, data_num)
 	time.sleep(0.5)
 	
-	print("Step 2: You need to put the tango phone on the IMU and make a rotation around Z axis. You will have 5sec")
+	os.system('clear')
+	print("Step 5: You need to put the tango phone on the IMU and make a rotation around Z axis. You will have 5sec")
 	input("Ready? Press Enter to continue...")
 	s2_time = time.time()
 	print("Writing data...")
@@ -51,7 +71,8 @@ def main():
 		writer.writerow([time.time(), *all_data])
 
 	time.sleep(0.5)
-	print("Step 3: Now you can make your measurement. Make sure the relative positions of your 2 devices doesn't change during the measurement")
+	os.system('clear')
+	print("Step 6: Now you can make your measurement. Make sure the relative positions of your 2 devices doesn't change during the measurement")
 	input("Ready? Press Enter to continue...")
 	
 
@@ -85,6 +106,7 @@ def main():
 				print(f'Start writing file {filename}...')
 				f, writer = init_data_file(filename, data_num)
 			elif q == "4":
+				f.close()
 				exit()
 
 
