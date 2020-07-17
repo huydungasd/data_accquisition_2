@@ -5,7 +5,7 @@ import shutil
 from utils.data_processing import *
 
 
-for data_num in range(1, 9):
+for data_num in range(9, 10):
     print(f'Making data{data_num}')
     raw_dir = f'./raw_data/data{data_num}/'
     raw_files = [name for name in os.listdir(raw_dir) if os.path.isfile(raw_dir + name)]

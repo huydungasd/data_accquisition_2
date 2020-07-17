@@ -34,7 +34,7 @@ def corr2_coeff(A, B):
     # Finally get corr coeff
     return np.dot(A_mA, B_mB.T) / np.sqrt(np.dot(ssA,ssB))
 
-path = "C:\\Users\\HN262835\\Downloads\\0"
+path = "H:\\data\\9"
 gt = np.loadtxt(path + '\\pose.txt')
 gt[:, 0] /= 1e9
 
@@ -112,6 +112,6 @@ fig = plt.figure(figsize=[14.4, 10.8])
 ax = fig.gca(projection='3d')
 ax.plot(gt[:, 1], gt[:, 2], gt[:, 3])
 ax.set_xlim(-0.5, 0.5)
-ax.set_ylim(-0.5, 0.1)
+ax.set_ylim(-0.1, 0.1)
 ax.set_zlim(0, 0.1)
 plt.show()

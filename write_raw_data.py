@@ -75,7 +75,8 @@ def main():
 	print("Step 6: Now you can make your measurement. Make sure the relative positions of your 2 devices doesn't change during the measurement")
 	input("Ready? Press Enter to continue...")
 	
-
+	all_data = read_raw_data(bno, com_all_data, length=32)
+	print(all_data)
 	while True:
 		try:
 			# Read all data at once and write to scv file
