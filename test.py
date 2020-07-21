@@ -68,22 +68,22 @@ def skew(omega):
                      [  omega[2],   0,          -omega[0]   ],
                      [  -omega[1],  omega[0],   0           ]])
 
-def cal_A(gyro_np, idx):
-    omega = gyro_np[idx]
-    domega = (gyro_np[idx + 1] - gyro_np[idx])/0.01
-    return skew(omega) @ skew(omega) + skew(domega)
+# def cal_A(gyro_np, idx):
+#     omega = gyro_np[idx]
+#     domega = (gyro_np[idx + 1] - gyro_np[idx])/0.01
+#     return skew(omega) @ skew(omega) + skew(domega)
 
-def cal_A2(quat, idx):
-    omega_m1 = R.from_quat(quat[idx - 1]).as_euler(seq='xyz')
-    omega = R.from_quat(quat[idx]).as_euler(seq='xyz')
-    omega_p1 = R.from_quat(quat[idx + 1]).as_euler(seq='xyz')
+# def cal_A2(quat, idx):
+#     omega_m1 = R.from_quat(quat[idx - 1]).as_euler(seq='xyz')
+#     omega = R.from_quat(quat[idx]).as_euler(seq='xyz')
+#     omega_p1 = R.from_quat(quat[idx + 1]).as_euler(seq='xyz')
 
-    velo = (omega_p1 - omega_m1) / (2 * 0.01)
-    acc = (omega_p1 - 2 * omega + omega_m1) / (0.01**2)
-    return skew(velo) @ skew(velo) + skew(acc)
+#     velo = (omega_p1 - omega_m1) / (2 * 0.01)
+#     acc = (omega_p1 - 2 * omega + omega_m1) / (0.01**2)
+#     return skew(velo) @ skew(velo) + skew(acc)
 
-for id_f in range(8, 9):
-    path = f"H:\\data\\2eme\\{id_f}"
+for id_f in range(1):
+    path = f"H:\\data\\1ere\\{id_f}"
     tango_gt_unalign = np.loadtxt(path + '\\pose.txt')
     tango_gt_unalign[:, 0] /= 1e9
 
@@ -129,6 +129,7 @@ for id_f in range(8, 9):
     imu_ori_unalign = imu_unalign.iloc[:, 19:25]
     imu_quat_unalign = imu_unalign.iloc[:, 25:33]
     tango_position_unalign = tango_gt_unalign[:, 1:4]
+    tango_ori2_unalign = tango_gt_unalign[:, 4:8]
 
     imu_start_measurement = np.where((time_imu_unalign.diff(1) > 0.5).to_numpy())[0][0]
     moment_imu_start_measurement = time_imu_unalign[imu_start_measurement]
@@ -150,9 +151,11 @@ for id_f in range(8, 9):
     time_imu_unalign = time_imu_unalign.to_numpy()
     imu_gyr_unalign = imu_gyr_unalign.to_numpy()
     imu_acc_unalign = imu_acc_unalign.to_numpy()
+    imu_mag_unalign = imu_mag_unalign.to_numpy()
     imu_quat_unalign = imu_quat_unalign.to_numpy()
 
     imu_acc_unalign = interpolate_3dvector_linear(imu_acc_unalign, time_imu_unalign, np.arange(time_imu_unalign[0], time_imu_unalign[-1], 0.01))
+    imu_mag_unalign = interpolate_3dvector_linear(imu_mag_unalign, time_imu_unalign, np.arange(time_imu_unalign[0], time_imu_unalign[-1], 0.01))
     imu_quat_unalign = interpolate_3dvector_linear(imu_quat_unalign, time_imu_unalign, np.arange(time_imu_unalign[0], time_imu_unalign[-1], 0.01))
     imu_gyr_unalign = interpolate_3dvector_linear(imu_gyr_unalign, time_imu_unalign, np.arange(time_imu_unalign[0], time_imu_unalign[-1], 0.01))
     time_imu_unalign = np.arange(time_imu_unalign[0], time_imu_unalign[-1], 0.01)
@@ -175,6 +178,7 @@ for id_f in range(8, 9):
 
 
     imu_acc_align = imu_acc_unalign[imu_start_measurement: imu_start_measurement + n_pts]
+    imu_mag_align = imu_mag_unalign[imu_start_measurement: imu_start_measurement + n_pts]
     imu_ori_align = imu_ori_unalign[imu_start_measurement: imu_start_measurement + n_pts]
     imu_quat_align = imu_quat_unalign[imu_start_measurement: imu_start_measurement + n_pts]
     imu_gyr_align = imu_gyr_unalign[imu_start_measurement: imu_start_measurement + n_pts]
@@ -185,7 +189,8 @@ for id_f in range(8, 9):
     tango_ori_align = tango_ori_unalign[start_tango + imu_start_measurement - idx_align_imu: start_tango + imu_start_measurement - idx_align_imu + n_pts]
     tango_position_align = tango_position_unalign[start_tango + imu_start_measurement - idx_align_imu: start_tango + imu_start_measurement - idx_align_imu + n_pts]
     tango_position_align = tango_position_align - tango_position_align[0]
-
+    tango_ori2_align = tango_ori2_unalign[start_tango + imu_start_measurement - idx_align_imu: start_tango + imu_start_measurement - idx_align_imu + n_pts]
+    tango_ori2_align = tango_ori2_align * np.array([[-1,1,1,-1]])
 
 
 
@@ -221,6 +226,7 @@ for id_f in range(8, 9):
         axes[i].legend()
         print(np.linalg.norm(tango_acc_align[1:200, i+1] - imu_acc_align[1:200, i]))
 
+    """
     m = 200
     w = np.zeros(3)
     Y = np.zeros((3*m,))
@@ -247,6 +253,7 @@ for id_f in range(8, 9):
         axes[i].set_title('Acceleration' + ' x' * (i==0) + ' y' * (i==1) + ' z' * (i==2))
         axes[i].legend()
         print(np.linalg.norm(tango_acc_align[1:201, i+1] - z[:200, i]))
+    """
 
     g = np.zeros((tango_acc_align.shape[0], tango_acc_align.shape[1] - 1))
     g2 = np.zeros((tango_acc_align.shape[0], tango_acc_align.shape[1] - 1))
@@ -256,6 +263,7 @@ for id_f in range(8, 9):
     plt.figure()
     plt.plot(time_imu_align, g)
     plt.plot(time_imu_align, g2)
+    print(f"g: {np.mean(g, axis=0)}")
 
     plt.rcParams.update({'font.size': 18})
     fig = plt.figure(figsize=[14.4, 10.8])
@@ -265,7 +273,7 @@ for id_f in range(8, 9):
     ax.set_ylim(-0.5, 0.1)
     ax.set_zlim(0, 0.1)
 
-    idxx = SHOE(np.hstack([tango_acc_align[:, 1:], tango_gyr_align[:, 1:]]),G=8e4)
+    idxx = SHOE(np.hstack([tango_acc_align[:, 1:], tango_gyr_align[:, 1:]]),G=1e5)
     lists = []
     start = 0
     stop = 0
@@ -284,13 +292,13 @@ for id_f in range(8, 9):
 
     print(len(lists))
 
-    # fig = plt.figure(figsize=[14.4, 10.8])
-    # ax = fig.gca(projection='3d')
-    # ax.plot(tango_position_align[idxx, 0], tango_position_align[idxx, 1], tango_position_align[idxx, 2], '.b')
-    # ax.plot(tango_position_align[~idxx, 0], tango_position_align[~idxx, 1], tango_position_align[~idxx, 2], 'r')
-    # ax.set_xlim(-0.5, 0.5)
-    # ax.set_ylim(-0.5, 0.1)
-    # ax.set_zlim(0, 0.1)
+    fig = plt.figure(figsize=[14.4, 10.8])
+    ax = fig.gca(projection='3d')
+    ax.plot(tango_position_align[idxx, 0], tango_position_align[idxx, 1], tango_position_align[idxx, 2], '.b')
+    ax.plot(tango_position_align[~idxx, 0], tango_position_align[~idxx, 1], tango_position_align[~idxx, 2], 'r')
+    ax.set_xlim(-0.5, 0.5)
+    ax.set_ylim(-0.5, 0.1)
+    ax.set_zlim(0, 0.1)
     plt.show()
 
     try:
@@ -306,14 +314,16 @@ for id_f in range(8, 9):
         pass
     
     tango_ori_align = tango_ori_align[:, [3,2,1,4]]
+    tango_ori2_align = tango_ori2_align[:, [2,1,0,3]]
     for i, lst in enumerate(lists):
         print(lst[0])
         print(lst[1])
         print('-------------------------')
-        imu_acc = pd.DataFrame(imu_acc_align[lst[0]:lst[1]], index=None, columns=["acc_x", "acc_y", "acc_z"])
-        imu_gyr = pd.DataFrame(imu_gyr_align[lst[0]:lst[1]], index=None, columns=["gyr_x", "gyr_y", "gyr_z"])
+        imu_acc = pd.DataFrame(tango_acc_align[lst[0]:lst[1], 1:], index=None, columns=["acc_x", "acc_y", "acc_z"])
+        imu_gyr = pd.DataFrame(tango_gyr_align[lst[0]:lst[1], 1:], index=None, columns=["gyr_x", "gyr_y", "gyr_z"])
+        imu_mag = pd.DataFrame(imu_mag_align[lst[0]:lst[1]], index=None, columns=["mag_x", "mag_y", "mag_z"])
         time_imu = pd.DataFrame(time_imu_align[lst[0]:lst[1]], index=None, columns=["time"])
-        data = pd.concat([time_imu, imu_acc, imu_gyr], axis=1)
+        data = pd.concat([time_imu, imu_acc, imu_mag, imu_gyr], axis=1)
         data.to_csv(path + f'\\data_deep\\imu\\{i}.csv', index=False)
 
         tango_ori = pd.DataFrame(tango_ori_align[lst[0]:lst[1]], index=None, columns=["q", "x", "y", "z"])
