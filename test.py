@@ -3,86 +3,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy.interpolate as interp
+
 from scipy.ndimage.interpolation import shift
 from scipy.spatial.transform import Rotation as R
 
-def interpolate_3dvector_linear(input, input_timestamp, output_timestamp):
-    assert input.shape[0] == input_timestamp.shape[0]
-    func = interp.interp1d(input_timestamp, input, axis=0)
-    interpolated = func(output_timestamp)
-    return interpolated
-
-def data_transform(data, sensibility):
-    assert data.shape[1] % 2 == 0
-    
-    data_list = []
-    for i in range(int(data.shape[1]/2)):
-        data_trans = data.iloc[:, i*2+1] * 2**8 + data.iloc[:, i*2]
-        data_trans[data_trans > 32767] -= 65536
-        data_trans /= sensibility
-        data_list.append(data_trans)
-    return pd.concat(data_list, axis=1)
-
-def SHOE(imudata, g=9.8, W=5, G=4.1e8, sigma_a=0.00098**2, sigma_w=(8.7266463e-5)**2):
-    T = np.zeros(np.int(np.floor(imudata.shape[0]/W)+1))
-    zupt = np.zeros(imudata.shape[0])
-    a = np.zeros((1,3))
-    w = np.zeros((1,3))
-    inv_a = 1/sigma_a
-    inv_w = 1/sigma_w
-    acc = imudata[:,0:3]
-    gyro = imudata[:,3:6]
-
-    i=0
-    for k in range(0,imudata.shape[0]-W+1,W): #filter through all imu readings
-        smean_a = np.mean(acc[k:k+W,:],axis=0)
-        for s in range(k,k+W):
-            a.put([0,1,2],acc[s,:])
-            w.put([0,1,2],gyro[s,:])
-            T[i] += inv_a*( (a - g * smean_a/np.linalg.norm(smean_a)).dot(( a - g * smean_a/np.linalg.norm(smean_a)).T)) #acc terms
-            T[i] += inv_w*( (w).dot(w.T) )
-        zupt[k:k+W].fill(T[i])
-        i+=1
-    zupt = zupt/W
-    plt.figure()
-    plt.plot(zupt)
-    return zupt < G
+from utils.data_processing import *
 
 
-def corr2_coeff(A, B):
-    # Rowwise mean of input arrays & subtract from input arrays themeselves
-    A_mA = A - A.mean()
-    B_mB = B - B.mean()
-
-    # Sum of squares across rows
-    ssA = (A_mA**2).sum()
-    ssB = (B_mB**2).sum()
-
-    # Finally get corr coeff
-    return np.dot(A_mA, B_mB.T) / np.sqrt(np.dot(ssA,ssB))
-
-def skew(omega):
-    assert omega.shape == (3,)
-    return np.array([[  0,          -omega[2],  omega[1]    ],
-                     [  omega[2],   0,          -omega[0]   ],
-                     [  -omega[1],  omega[0],   0           ]])
-
-# def cal_A(gyro_np, idx):
-#     omega = gyro_np[idx]
-#     domega = (gyro_np[idx + 1] - gyro_np[idx])/0.01
-#     return skew(omega) @ skew(omega) + skew(domega)
-
-# def cal_A2(quat, idx):
-#     omega_m1 = R.from_quat(quat[idx - 1]).as_euler(seq='xyz')
-#     omega = R.from_quat(quat[idx]).as_euler(seq='xyz')
-#     omega_p1 = R.from_quat(quat[idx + 1]).as_euler(seq='xyz')
-
-#     velo = (omega_p1 - omega_m1) / (2 * 0.01)
-#     acc = (omega_p1 - 2 * omega + omega_m1) / (0.01**2)
-#     return skew(velo) @ skew(velo) + skew(acc)
-
-for id_f in range(18):
+for id_f in range(1):
     path = f"/home/huydung/devel/intern/data/3eme/{id_f}"
     tango_gt_unalign = np.loadtxt(path + '/pose.txt')
     tango_gt_unalign[:, 0] /= 1e9
@@ -128,7 +56,7 @@ for id_f in range(18):
     imu_gyr_unalign = imu_unalign.iloc[:, 13:19]
     imu_ori_unalign = imu_unalign.iloc[:, 19:25]
     imu_quat_unalign = imu_unalign.iloc[:, 25:33]
-    tango_position_unalign = tango_gt_unalign[:, 0:4]
+    tango_position_unalign = tango_gt_unalign[:, 1:4]
     tango_ori2_unalign = tango_gt_unalign[:, 4:8]
 
     imu_start_measurement = np.where((time_imu_unalign.diff(1) > 0.5).to_numpy())[0][0]
@@ -174,22 +102,6 @@ for id_f in range(18):
             idx_align_imu = i
     n_pts = min(len(time_imu_unalign) - imu_start_measurement, len(tango_gyr_unalign) - (start_tango + imu_start_measurement - idx_align_imu))
     print(f'n points: {n_pts}')
-
-    t_th = tango_gyr_unalign[start_tango + imu_start_measurement - idx_align_imu, 0]
-    print(t_th)
-    print(start_tango + imu_start_measurement - idx_align_imu)
-
-    idx_align_imu_for_acc = np.where(tango_acc_unalign[:, 0] > t_th)[0][0]
-    print(idx_align_imu_for_acc)
-    print(tango_acc_unalign[idx_align_imu_for_acc:idx_align_imu_for_acc+10])
-
-    idx_align_imu_for_position = np.where(tango_position_unalign[:, 0] > t_th)[0][0]
-    print(idx_align_imu_for_position)
-    print(tango_position_unalign[idx_align_imu_for_position:idx_align_imu_for_position+10])
-
-    idx_align_imu_for_ori = np.where(tango_ori_unalign[:, 0] > t_th)[0][0]
-    print(idx_align_imu_for_ori)
-    print(tango_ori_unalign[idx_align_imu_for_ori:idx_align_imu_for_ori+10])
 
     imu_acc_align = imu_acc_unalign[imu_start_measurement: imu_start_measurement + n_pts]
     imu_mag_align = imu_mag_unalign[imu_start_measurement: imu_start_measurement + n_pts]
