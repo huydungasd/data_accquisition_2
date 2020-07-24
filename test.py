@@ -128,7 +128,7 @@ for id_f in range(18):
     imu_gyr_unalign = imu_unalign.iloc[:, 13:19]
     imu_ori_unalign = imu_unalign.iloc[:, 19:25]
     imu_quat_unalign = imu_unalign.iloc[:, 25:33]
-    tango_position_unalign = tango_gt_unalign[:, 1:4]
+    tango_position_unalign = tango_gt_unalign[:, 0:4]
     tango_ori2_unalign = tango_gt_unalign[:, 4:8]
 
     imu_start_measurement = np.where((time_imu_unalign.diff(1) > 0.5).to_numpy())[0][0]
@@ -175,7 +175,21 @@ for id_f in range(18):
     n_pts = min(len(time_imu_unalign) - imu_start_measurement, len(tango_gyr_unalign) - (start_tango + imu_start_measurement - idx_align_imu))
     print(f'n points: {n_pts}')
 
+    t_th = tango_gyr_unalign[start_tango + imu_start_measurement - idx_align_imu, 0]
+    print(t_th)
+    print(start_tango + imu_start_measurement - idx_align_imu)
 
+    idx_align_imu_for_acc = np.where(tango_acc_unalign[:, 0] > t_th)[0][0]
+    print(idx_align_imu_for_acc)
+    print(tango_acc_unalign[idx_align_imu_for_acc:idx_align_imu_for_acc+10])
+
+    idx_align_imu_for_position = np.where(tango_position_unalign[:, 0] > t_th)[0][0]
+    print(idx_align_imu_for_position)
+    print(tango_position_unalign[idx_align_imu_for_position:idx_align_imu_for_position+10])
+
+    idx_align_imu_for_ori = np.where(tango_ori_unalign[:, 0] > t_th)[0][0]
+    print(idx_align_imu_for_ori)
+    print(tango_ori_unalign[idx_align_imu_for_ori:idx_align_imu_for_ori+10])
 
     imu_acc_align = imu_acc_unalign[imu_start_measurement: imu_start_measurement + n_pts]
     imu_mag_align = imu_mag_unalign[imu_start_measurement: imu_start_measurement + n_pts]
