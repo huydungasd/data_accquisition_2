@@ -5,7 +5,7 @@ import shutil
 from utils.data_processing import *
 
 
-for data_num in range(9, 10):
+for data_num in range(10, 11):
     print(f'Making data{data_num}')
     raw_dir = f'./raw_data/data{data_num}/'
     raw_files = [name for name in os.listdir(raw_dir) if os.path.isfile(raw_dir + name)]
@@ -16,7 +16,7 @@ for data_num in range(9, 10):
         pass
     for name in raw_files:
         filepath = raw_dir + f'{name}'
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(filepath, header=1)
         df_data = df.iloc[:, 1:]
         df = df[~df_data.duplicated(keep='first')]
 
